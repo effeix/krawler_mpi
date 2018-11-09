@@ -14,6 +14,8 @@ A biblioteca [MPI](https://www.open-mpi.org/) será utilizada para realizar esta
 - GCC/G++
 - CMake
 - Make
+- Python 3.7+
+- matplotlib (Python)
 
 ## MPI
 
@@ -71,12 +73,15 @@ As informações são obtidas por meio do uso de expressões regulares que as de
 Afim de explorar a performance deste programa, algumas métricas de tempo são coletadas ao longo do *crawling*. São elas:
 
 - Tempo ocioso (TOTAL_IDLE_TIME): tempo de espera pelo download de páginas
+- Tempo médio ocioso (AVG_IDLE_TIME): tempo médio de espera pelo download de páginas
 - Tempo por produto (PROD_TIME): tempo gasto para baixar uma página específica de um produto e criar sua visualização em JSON. Cada produto baixado possui um PROD_TIME.
 - Tempo médio por produto (AVG_TIME_PER_PRODUCT): tempo total de execução dividido pelo número de produtos coletados.
 
 Outras métricas coletadas:
 - Tempo total de execução (TOTAL_EXEC_TIME).
 - Número de produtos coletados (TOTAL_PROD_COUNT).
+
+##### Nota: a métrica AVG_IDLE_TIME foi introduzida porque a métrica TOTAL_IDLE_TIME mostra o tempo total de downloads de páginas de maneira sequencial (soma de todos os tempos), o que não demonstra a realidade numa execução paralela (páginas sendo baixadas ao mesmo tempo). Como não é possível identificar com precisão o tempo de downloads *paralelos*, foi introduzido um cálculo de tempo médio de download. 
 
 Todas as métricas são enviadas para a saída de erro padrão do sistema, que pode ser redirecionada para um arquivo de texto a gosto do usuário, como no exemplo a seguir (todos os valores estçao em segundos, com exceção de TOTAL_PROD_COUNT que é uma contagem):
 
@@ -86,6 +91,7 @@ PROD_TIME: 0.85
 PROD_TIME: 0.50
 ...
 TOTAL_PROD_COUNT: 200
+AVG_IDLE_TIME: 15
 TOTAL_IDLE_TIME: 180
 TOTAL_EXEC_TIME: 30
 AVG_TIME_PER_PRODUCT: 0.7
@@ -118,11 +124,23 @@ $ cmake
 $ make
 ```
 
-Após a compilação, execute-o assim:
+Um programa em python foi criado para executar o programa (localizado em `test/`), para realizar diversos testes e criar gráficos de tempo. Para utilizá-lo, navegue até a pasta `test/` e rode o seguinte comando:
 ```sh
-$ URL=https://www.magazineluiza.com.br/smartphone/celulares-e-smartphones/s/te/tcsp/ mpiexec -n <numero_de_processos> krawler_mpi 2> metrics.txt
+$ python run.py <max_procs> <iter> <url>
 ```
 
-As métricas estarão em `metrics.txt`. Caso queira, mude o nome do arquivo ao rodar mais de uma vez para não sobrescrevê-lo!
+em que `<max_procs>` é o número máximo de processos a serem utilizados - sero feitos testes utilizando de 1 até `<max_procs>` processos - `<iter>` é o número de ietraçes com a mesma quantidade de processos, afim de obter medidas mais precisas e `<url>` é a URL da categoria, como explicado acima.
+
+#### Arquivos de teste
+
+As métricas estarão na pasta `test/files/`, com cada arquivo estando no formato `iters_mX_pY_iZ`, onde X é a quantidade de máquinas utilizadas para aquele teste, Y é a quantidade de processos utilizada para aquele teste e Z é a iteração. Por exemplo:
+
+> O arquivo `iters_m2_p4_i0` mostra os resultados da primeira iteração de uma execução que utilizou 2 máquinas e 4 processos. O arquivo `iters_m2_p4_i1` mostra os resultados da segunda iteração da mesma execução.
+
+Cada máquina suporta um máximo de dois processos, sendo esta uma escolha do desenvolvedor. O arquivo `hosts`, presente na pasta `build/`, mostra os *hosts* (máquinas) utilizados pela última execução e a quantidade de processos disponíveis em cada uma (*slots*). Por algum motivo ainda não descoberto, a execução com mais de 7 processos não é possvel, gerando um erro do tipo *Segmentation Fault*.
+
+#### Gráficos
+
+Caso o usuário possua a biblioteca de python `matplotlib`, gráficos sero gerados com algumas visualizações de tempo e colocados na pasta `test/charts/`.
 
 ## Resultados
