@@ -16,7 +16,7 @@ public:
             std::string prod_url
            );
     
-    std::ostringstream display();
+    std::string display();
     
     std::string name,
         description,

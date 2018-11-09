@@ -1,22 +1,18 @@
 #include "main.hpp"
-#include "krawlers.hpp"
-#include <boost/mpi/environment.hpp>
-#include <boost/mpi/collectives.hpp>
-#include <boost/mpi/communicator.hpp>
+
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
-template<typename T>
-void atomic_print(std::vector<T> vec) {
-    std::ostringstream oss;
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/collectives.hpp>
+#include <boost/mpi/communicator.hpp>
 
-    for(auto &e: vec)
-        oss << e << std::endl;
-    
-    std::cout << oss.str() << std::endl << std::flush;
-}
+#include "krawlers.hpp"
+
+using namespace std::chrono;
 
 void get_env(envvars* env) {
     const char * ENV_nodes = std::getenv("NODES");
@@ -25,14 +21,16 @@ void get_env(envvars* env) {
     env->NODES = ENV_nodes == NULL ? 4 : std::stoi(ENV_nodes);
 
     if(ENV_url == NULL)
-        throw std::invalid_argument("Environment variable URL must be set. Exiting...");
+        throw std::invalid_argument(
+            "Environment variable URL must be set. Exiting...");
     else
         env->URL = ENV_url;
 }
 
 // Based on: https://stackoverflow.com/a/37708514/4922572
-std::vector<std::vector<std::string>> split_vector(const std::vector<std::string>& vec, size_t n) {
-    std::vector<std::vector<std::string>> outVec;
+std::vector<std::vector<std::string>> split_vector(
+    const std::vector<std::string>& vec, size_t n) {
+    std::vector<std::vector<std::string>> splitted;
 
     int length = vec.size() / n;
     int remain = vec.size() % n;
@@ -41,16 +39,17 @@ std::vector<std::vector<std::string>> split_vector(const std::vector<std::string
     int end = 0;
 
     for (unsigned int i = 0; i < std::min(n, vec.size()); ++i) {
+        // Remaining elements will be distributed one by one across chunks
         end += (remain > 0) ? (length + !!(remain--)) : length;
 
-        outVec.push_back(
+        splitted.push_back(
             std::vector<std::string>(vec.begin() + begin, vec.begin() + end)
         );
 
         begin = end;
     }
 
-    return outVec;
+    return splitted;
 }
 
 int main(int argc, char **argv) {
@@ -61,7 +60,12 @@ int main(int argc, char **argv) {
     std::vector<std::vector<std::string>> all_pages_splitted_by_process;
     KrawlerS ks;
 
-    if(world.rank() == 0) {
+    Time::time_point total_program_time_start;
+    Time::time_point total_program_time_end;
+
+    if(world.rank() == ROOT_NODE) {
+        total_program_time_start = Time::now();
+
         envvars * env = new envvars;
 
         try {
@@ -73,20 +77,7 @@ int main(int argc, char **argv) {
         }
 
         std::vector<std::string> pages = ks.get_pages(env->URL);
-        /**
-         * pages = [url_1, url_2, url_3, ...]
-         **/
-
         all_pages_splitted_by_process = split_vector(pages, world.size());
-        /**
-         * all_pages_splitted_by_process = [
-         *     [url_01, url_02, url_03, ...],
-         *     [url_11, url_12, url_13, ...],
-         *     [url_21, url_22, url_23, ...],
-         *     [url_31, url_32, url_33, ...],
-         *     ...
-         * ]
-         **/
     }
 
     std::vector<std::string> process_specific_pages;
@@ -94,15 +85,59 @@ int main(int argc, char **argv) {
         world,
         all_pages_splitted_by_process,
         process_specific_pages,
-        0
+        ROOT_NODE
     );
 
-    atomic_print(process_specific_pages);
+    double process_idle_time = 0;
+    double total_idle_time = 0;
+    std::vector<std::string> process_specific_products = ks.crawl(
+        process_specific_pages,
+        process_idle_time 
+    );
 
-    std::vector<std::ostringstream> products = ks.crawl(process_specific_pages);
+    boost::mpi::reduce(
+        world,
+        process_idle_time,
+        total_idle_time,
+        std::plus<double>(),
+        ROOT_NODE
+    );
 
-    for(auto &p: products)
-        std::cout << p.str() << std::endl;
+    std::vector<std::vector<std::string>> all_products_by_process;
+    boost::mpi::gather(
+        world,
+        process_specific_products,
+        all_products_by_process,
+        ROOT_NODE
+    );
+
+    if(world.rank() == ROOT_NODE) {
+        unsigned int total_products = 0;
+        unsigned int length_all_products = all_products_by_process.size();
+        unsigned int product_qty = 0;
+
+        for(unsigned int i = 0; i < length_all_products; i++) {
+            for(std::string& product: all_products_by_process[i]) {
+                std::cout << product << std::endl;
+            }
+        }
+
+        for(unsigned int i = 0; i < length_all_products; i++) {
+            product_qty = all_products_by_process[i].size();
+            total_products += product_qty;
+
+            std::cout << i << ": processed " << product_qty << " products";
+            std::cout << std::endl;
+        }
+
+        total_program_time_end = Time::now();
+        duration<double> elapsed_total = duration_cast<duration<double>>(total_program_time_end - total_program_time_start);
+
+        std::cerr << "TOTAL_PROD_COUNT: " << total_products << std::endl;
+        std::cerr << "TOTAL_IDLE_TIME: " << total_idle_time << std::endl;
+        std::cerr << "TOTAL_EXEC_TIME: " << elapsed_total.count() << std::endl;
+        std::cerr << "AVG_TIME_PER_PRODUCT: " << elapsed_total.count() / total_products << std::endl;
+    }
 
     return EXIT_SUCCESS;
 }

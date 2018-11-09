@@ -1,15 +1,18 @@
 #include "product.hpp"
+
 #include <iostream>
 #include <sstream>
 
-Product::Product(std::string name,
-                 std::string description,
-                 std::string pic_url,
-                 std::string price,
-                 std::string price_in_installment,
-                 std::string installment_qty,
-                 std::string category,
-                 std::string prod_url) :
+
+Product::Product(
+        std::string name,
+        std::string description,
+        std::string pic_url,
+        std::string price,
+        std::string price_in_installment,
+        std::string installment_qty,
+        std::string category,
+        std::string prod_url) :
     name(name),
     description(description),
     pic_url(pic_url),
@@ -17,11 +20,9 @@ Product::Product(std::string name,
     price_in_installment(price_in_installment),
     installment_qty(installment_qty),
     category(category),
-    prod_url(prod_url)
-{
-}
+    prod_url(prod_url) {}
 
-std::ostringstream Product::display() {
+std::string Product::display() {
     std::ostringstream oss;
     oss << "{" << std::endl;
     oss << "    " << "\"nome\":" << " \"" + name + "\"," << std::endl;
@@ -34,6 +35,5 @@ std::ostringstream Product::display() {
     oss << "    " << "\"url\":" << " \"" + prod_url + "\"," << std::endl;
     oss << "}";
 
-    return oss;
+    return oss.str();
 }
-

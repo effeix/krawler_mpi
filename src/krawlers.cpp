@@ -1,173 +1,156 @@
-#include "curlhandler.h"
 #include "krawlers.hpp"
+
+#include "curlhandler.h"
 #include "product.hpp"
+
+#include <chrono>
+#include <iostream>
+#include <sstream>
+#include <string>
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/optional/optional.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/regex.hpp>
-#include <iostream>
-#include <sstream>
-#include <string>
 
-std::string get_product_description(std::string content) {
-    boost::regex expr(
-        "(?<=<p class=\"description__text\"></p>)(.*?)(?=<p class=\"description__text\"></p>)");
+using namespace std::chrono;
+
+KrawlerS::KrawlerS() {
+    re_last_page = "(?<=\"lastPage\":)(\\d+)";
+    re_product_name = "(?<=\"fullTitle\":\\s)(.*?)(?=\",)";
+    re_product_description = "(?<=<p class=\"description__text\"></p>)(.*?)(?=<p class=\"description__text\"></p>)";
+    re_product_img_url = "(?<=showcase-product__big-img js-showcase-big-img\"\\ssrc=\")(.*?)(?=\" item)";
+    re_product_price = "(?<=\"priceTemplate\":\\s\")(.*?)(?=\",)";
+    re_product_installment_qty = "(?<=\"installmentQuantity\":\\s\")(.*?)(?=\",)";
+    re_product_price_in_installment = "(?<=\"priceTemplate\":\\s\")(.*?)(?=\",)";
+    re_product_category = "";
+    re_product_link = "(?<=linkToProduct\"\\shref=\")(.*?)(?=\")";
+}
+
+std::string KrawlerS::search(std::string& page_content, std::string& expr) {
+    boost::regex expression(expr);
     boost::smatch matches;
 
-    if(boost::regex_search(content, matches, expr)) {
+    if(boost::regex_search(page_content, matches, expression)) {
         return matches[1];
     }
 
     return "N/A";
 }
 
-std::string get_product_category(std::string content) {
+std::vector<std::string> KrawlerS::search_many(std::string& page_content,
+        std::string& expr) {
+    boost::regex expression(expr);
+
+    std::vector<std::string> all_matches;
+
+    boost::sregex_token_iterator iter(
+        page_content.begin(),
+        page_content.end(),
+        expression,
+        0
+    );
+    boost::sregex_token_iterator end;
+
+    for(; iter != end; ++iter)
+        all_matches.push_back(*iter);
+
+    return all_matches;
+}
+
+std::string KrawlerS::product_category(std::string product_url) {
     std::vector<std::string> strs;
-    boost::split(strs, content, boost::is_any_of("/"));
+    boost::split(strs, product_url, boost::is_any_of("/"));
 
     return strs[3];
 }
 
-void print_json(boost::property_tree::ptree & pt) {
-    std::ostringstream output;
-    boost::property_tree::write_json(output, pt);
-    std::cout << output.str() << std::endl;
-}
+Product KrawlerS::new_product(
+    std::string& link,
+    double& download_time) {
 
-std::string unescape(std::string s) {
-    boost::regex expr("\\\\");
-    std::string newtext = "";
+    duration<double> elapsed;
+
+    Time::time_point product_analysis_start = Time::now();
+
+    Time::time_point product_download_start = Time::now();
+    std::string product_page = http_get(link);
+    Time::time_point product_download_end = Time::now();
+
+    std::string name = search(product_page, re_product_name);
+    std::string description = search(product_page, re_product_description);
+    std::string pic_url = search(product_page, re_product_img_url);
+    std::string price = search(product_page, re_product_price);
+    std::string installment_qty = search(product_page,
+        re_product_installment_qty);
+    std::string price_in_installment = search(product_page,
+        re_product_price_in_installment);
     
-    return boost::regex_replace(s, expr, newtext);
-}
+    Time::time_point product_analysis_end = Time::now();
 
-std::string total_pages(std::string content) {
-    boost::regex expr("\"lastPage\":(\\d+)");
-    boost::smatch matches;
-    
-    if(boost::regex_search(content, matches, expr)) {
-        return matches[1];
-    }
-    
-    return 0;
-}
+    elapsed = duration_cast<duration<double>>(product_download_end - product_download_start);
+    download_time = elapsed.count();
 
-std::string total_products(std::string content) {
-    boost::regex expr("\"size\":(\\d+)");
-    boost::smatch matches;
-    
-    if(boost::regex_search(content, matches, expr)) {
-        return matches[1];
-    }
-    
-    return 0;
-}
+    elapsed = duration_cast<duration<double>>(product_analysis_end - product_analysis_start);
 
-boost::property_tree::ptree get_products(std::string content) {
-    boost::regex expr("(\"products\":\\[.*?\\])");
-    boost::smatch matches;
+    std::cerr << "PROD_TIME: " << elapsed.count() << std::endl;
 
-    boost::property_tree::ptree pt;
-
-    if(boost::regex_search(content, matches, expr)) {
-        std::stringstream ss;
-        ss << "{" + matches[1] + "}";
-        boost::property_tree::read_json(ss, pt);
-    }
-
-    return pt;
-}
-
-Product create_product(const boost::property_tree::ptree::value_type &child, std::string url) {
-    std::string name = child.second.get<std::string>("title");
-    std::string pic_url = child.second.get<std::string>("imageUrl");
-
-    std::string price_in_installment;
-    std::string installment_qty;
-    if(child.second.get<std::string>("installment") == "null") {
-        price_in_installment = "N/A";
-        installment_qty = "N/A";
-    }
-    else {
-        price_in_installment = child.second.get<std::string>("installment.totalValue");
-        installment_qty = child.second.get<std::string>("installment.quantity");
-    }
-
-    std::string price;
-    if(child.second.get<std::string>("bestPrice") == "null") {
-        if(price_in_installment == "N/A") {
-           price = "N/A"; 
-        }
-        else {
-            price = price_in_installment;
-        }
-    }
-    else {
-        price = child.second.get<std::string>("bestPrice.value");
-    }
-
-    std::string prod_url = child.second.get<std::string>("url");
-
-    std::string page_product = http_get(unescape(prod_url));
-    std::string description = get_product_description(page_product);
-    std::string category = get_product_category(url);
-
-    Product p(name,
-            description,
-            pic_url,
-            price,
-            price_in_installment,
-            installment_qty,
-            category,
-            prod_url
+    return Product(
+        name,
+        description,
+        pic_url,
+        price,
+        price_in_installment,
+        installment_qty,
+        "",
+        link
     );
-
-    return p;
 }
 
-KrawlerS::KrawlerS(){}
+std::vector<std::string> KrawlerS::crawl(
+    std::vector<std::string> urls, double& process_idle_time) {
 
+    std::vector<std::string> all_products;
 
-std::vector<std::ostringstream> KrawlerS::crawl(std::vector<std::string> urls) {
+    std::string category = product_category(urls[0]);
 
-    std::vector<std::ostringstream> output;
+    double download_time;
+    duration<double> elapsed;
 
-    for(unsigned int i = 0; i < urls.size() + 1; i++) {
-        std::string product_page = http_get(urls[i]);
+    for(unsigned int i = 0; i < urls.size(); i++) {
+        Time::time_point download_time_start = Time::now();
+        std::string products_page = http_get(urls[i]);
+        Time::time_point download_time_end = Time::now();
+        elapsed = duration_cast<duration<double>>(download_time_end - download_time_start);
+        process_idle_time += elapsed.count();
 
-        std::vector<Product> product_list;
-        boost::property_tree::ptree products = get_products(product_page);
+        std::vector<std::string> product_links = search_many(
+            products_page,
+            re_product_link
+        );
 
-        boost::optional<boost::property_tree::ptree&> children = products.get_child_optional("products");
+        for(std::string& link: product_links) {
+            Product p = new_product(link, download_time);
+            p.category = category;
+            all_products.push_back(p.display());
 
-        if(!children) {
-            std::cout << "Skipping..." << std::endl << std::endl;
+            process_idle_time += download_time;
         }
-        else {
-            int count = 0;
-            for(const boost::property_tree::ptree::value_type& child : products.get_child("products")) {
-                count++;
-
-                product_list.push_back(create_product(child, urls[i]));
-            }
-            std::cout << std::endl;
-        }
-
-        for(Product prod: product_list) {
-            output.push_back(
-                prod.display()
-            );
-        }
-
     }
 
-    return output;
+    // std::ostringstream oss;
+    // for(std::string& p: all_products)
+    //     oss << p << std::endl;
+
+    // std::cout << oss.str();
+
+    return all_products;
 }
 
 std::vector<std::string> KrawlerS::get_pages(std::string url) {
     std::string first_page = http_get(url);
-    std::string n_pages = total_pages(first_page);
+    std::string n_pages = search(first_page, re_last_page);
     std::string pagination = "?page=";
 
     std::vector<std::string> pages;

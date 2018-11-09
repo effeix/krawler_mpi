@@ -1,5 +1,7 @@
 #include "curlhandler.h"
+
 #include <iostream>
+
 
 /*
  * By default, cURL writes responses to stdout. To prevent this and collect the data,

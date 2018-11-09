@@ -2,7 +2,9 @@
 #define __CURLHANDLER_H__
 
 #include "curl/curl.h"
+
 #include <string>
+
 
 /*
  * By default, cURL writes responses to stdout. To prevent this and collect the data,
