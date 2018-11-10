@@ -143,15 +143,21 @@ Cada máquina suporta um máximo de dois processos, sendo esta uma escolha do de
 
 #### Gráficos
 
-Caso o usuário possua a biblioteca de python `matplotlib`, 5 gráficos serão gerados mostrando a evolução das métricas acima. É esperado que a métrcia TOTAL_PROD_COUNT se mantenha constante independentemente do número de processos, indicando que a mesma quantidade de produtos foi recuperada em todos os testes.
-
-#### ATENÇÃO: os gráficos serão gerados para a quantidade de processos estipulada no momento da execução do comando. Exemplo: se no argumento `<max_iter>` for passado "1", os gráficos só terão um ponto de dado. Um dos objetivos é criar um arquivo separado para a geraço dos gráficos.
+Caso o usuário possua a biblioteca de python `matplotlib`, 5 gráficos podem ser gerados com o programa `make_charts.py`, passando a quantidade de processos máximos a serem analisado (e.g. se o usuário passar 6, haverá 6 pontos de dado em cada gráfico). É esperado que a métrica TOTAL_PROD_COUNT se mantenha constante independentemente do número de processos, indicando que a mesma quantidade de produtos foi recuperada em todos os testes.
 
 ## Resultados
 Para demonstrar o programa foram gerados alguns testes utilizando a URL https://www.magazineluiza.com.br/artesanato/armarinhos/s/am/arsa/, categoria que não possui quantidade exagerada de produtos mas é grande o suficiente para o teste. Os testes foram realizados em um cluster AWS com instância rodando sistema Ubuntu 18.04.1, utilizando de 1 até 7 processos e de 1 até 4 máquinas, com máximo de 2 processos por máquina. Cada execução com um determinado número de processos foi realizada com 5 iterações, resultando em 42 iterações no total.
 
 O programa apresentará erros se a quantidade de páginas a serem buscadas for menor do que a quantidade de processos passados.
 
-Os gŕaficos gerados estão abaixo:
+Os gŕaficos gerados estão abaixo, sendo que o eixo horizontal representa número de processos e o eixo vertical representa tempo em segundos:
 
-IMAGENS
+![TOTAL_PROD_COUNT](https://i.imgur.com/Pg3t1rj.png)
+
+Como mencionado, o gráfico é constante, mostrando que a mesma quantidade de produtos foi coletada em todos os testes.
+
+![TOTAL_EXEC_TIME](https://i.imgur.com/T39FKeL.png)
+![AVG_TIME_PER_PRODUCT](https://i.imgur.com/Dwig3nH.png)
+![AVG_IDLE_TIME](https://i.imgur.com/QLRFjvn.png)
+
+Os três gráficos acima mostram uma melhora bastante significativa conforme a quantidade de processos aumenta. No foi possvel conferir se um número maior de processos diminuiria ainda mais os tempos, por conta dos erros presentes ao utilizar mais de 7 processos.
