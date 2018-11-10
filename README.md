@@ -66,7 +66,9 @@ Cada processo utilizará seu conjunto de URLs para coletar os produtos, podendo 
 }
 ```
 
-As informações são obtidas por meio do uso de expressões regulares que as detectam em meio ao conteúdo HTML de cada página. Após a finalização de todas as URLs de todos os processos, a função `boost::mpi::gather()` é utilizada para agrupar novamente os produtos gerados, em um processo escolhido pelo usuário (novamente, normalmente o 0 (zero)). Após agrupados, os produtos serão mostrados ao usuário via saída padrão (terminal). No final do relatório existe um diagrama detalhando a troca de mensagens entre os processos.
+As informações são obtidas por meio do uso de expressões regulares que as detectam em meio ao conteúdo HTML de cada página. Após a finalização de todas as URLs de todos os processos, a função `boost::mpi::gather()` é utilizada para agrupar novamente os produtos gerados, em um processo escolhido pelo usuário (novamente, normalmente o 0 (zero)). Após agrupados, os produtos serão mostrados ao usuário via saída padrão (terminal). Abaixo est um esquema da troca de mensagens entre processos:
+
+![MPI Schema](https://i.imgur.com/9BagN78.png)
 
 ## Métricas
 
@@ -74,7 +76,7 @@ Afim de explorar a performance deste programa, algumas métricas de tempo são c
 
 - Tempo ocioso (TOTAL_IDLE_TIME): tempo de espera pelo download de páginas
 - Tempo médio ocioso (AVG_IDLE_TIME): tempo médio de espera pelo download de páginas
-- Tempo por produto (PROD_TIME): tempo gasto para baixar uma página específica de um produto e criar sua visualização em JSON. Cada produto baixado possui um PROD_TIME.
+- Tempo por produto (PROD_TIME): tempo gasto para baixar uma página específica de um produto e criar sua visualização em JSON. Cada produto baixado possui uma linha com o tempo gasto.
 - Tempo médio por produto (AVG_TIME_PER_PRODUCT): tempo total de execução dividido pelo número de produtos coletados.
 
 Outras métricas coletadas:
@@ -86,9 +88,9 @@ Outras métricas coletadas:
 Todas as métricas são enviadas para a saída de erro padrão do sistema, que pode ser redirecionada para um arquivo de texto a gosto do usuário, como no exemplo a seguir (todos os valores estçao em segundos, com exceção de TOTAL_PROD_COUNT que é uma contagem):
 
 ```
-PROD_TIME: 1.2
-PROD_TIME: 0.85
-PROD_TIME: 0.50
+1.2
+0.85
+0.50
 ...
 TOTAL_PROD_COUNT: 200
 AVG_IDLE_TIME: 15
@@ -131,7 +133,7 @@ $ python run.py <max_procs> <iter> <url>
 
 em que `<max_procs>` é o número máximo de processos a serem utilizados - serão feitos testes utilizando de 1 até `<max_procs>` processos - `<iter>` é o número de iterações com a mesma quantidade de processos, afim de obter medidas mais precisas e `<url>` é a URL da categoria, como explicado acima.
 
-Este programa está preparado para rodar num cluster especifico criado para este projeto. Caso deseje rodar num cluster próprio, edite as lista `HOSTNAMES` e `HOSTDESCS` no arquivo `run.py` e coloque os hostnames (ou IPs) correspondentes às máquinas de seu cluster.
+Este programa está preparado para rodar num cluster especifico criado para este projeto. Caso deseje rodar num cluster próprio, edite as lista `HOSTNAMES` e `HOSTDESCS` no arquivo `run.py` e coloque os dados correspondentes às máquinas de seu cluster.
 
 #### Arquivos de teste
 
@@ -143,11 +145,26 @@ Cada máquina suporta um máximo de dois processos, sendo esta uma escolha do de
 
 #### Gráficos
 
-Caso o usuário possua a biblioteca de python `matplotlib`, 5 gráficos serão gerados mostrando a evolução das métricas acima. É esperado que a métrcia TOTAL_PROD_COUNT se mantenha constante independentemente do número de processos, indicando que a mesma quantidade de produtos foi recuperada em todos os testes.
+Caso o usuário possua a biblioteca de python `matplotlib`, 5 gráficos podem ser gerados com o programa `make_charts.py`, passando a quantidade de processos máximos a serem analisado (e.g. se o usuário passar 6, haverá 6 pontos de dado em cada gráfico). É esperado que a métrica TOTAL_PROD_COUNT se mantenha constante independentemente do número de processos, indicando que a mesma quantidade de produtos foi recuperada em todos os testes.
+
+Utilização:
+```sh
+$ python make_charts.py <max_proc>
+```
 
 ## Resultados
-Para demonstrar o programa foram gerados alguns testes utilizando a URL https://www.magazineluiza.com.br/artesanato/armarinhos/s/am/arsa/, categoria que não possui quantidade exagerada de produtos mas é grande o suficiente para o teste.
+Para demonstrar o programa foram gerados alguns testes utilizando a URL https://www.magazineluiza.com.br/artesanato/armarinhos/s/am/arsa/, categoria que não possui quantidade exagerada de produtos mas é grande o suficiente para o teste. Os testes foram realizados em um cluster AWS com instância rodando sistema Ubuntu 18.04.1, utilizando de 1 até 7 processos e de 1 até 4 máquinas, com máximo de 2 processos por máquina. Cada execução com um determinado número de processos foi realizada com 5 iterações, resultando em 42 iterações no total.
 
-Os gŕaficos gerados estão abaixo:
+O programa apresentará erros se a quantidade de páginas a serem buscadas for menor do que a quantidade de processos passados.
 
-IMAGENS
+Os gŕaficos gerados estão abaixo, sendo que o eixo horizontal representa número de processos e o eixo vertical representa tempo em segundos, exceto no gráfico TOTAL_PROD_COUNT, em que o eixo vertical representa quantidade:
+
+![TOTAL_PROD_COUNT](https://i.imgur.com/Pg3t1rj.png)
+
+Como mencionado, o gráfico é constante, mostrando que a mesma quantidade de produtos foi coletada em todos os testes.
+
+![TOTAL_EXEC_TIME](https://i.imgur.com/T39FKeL.png)
+![AVG_TIME_PER_PRODUCT](https://i.imgur.com/Dwig3nH.png)
+![AVG_IDLE_TIME](https://i.imgur.com/QLRFjvn.png)
+
+Os três gráficos acima mostram uma melhora bastante significativa conforme a quantidade de processos aumenta. No foi possvel conferir se um número maior de processos diminuiria ainda mais os tempos, por conta dos erros presentes ao utilizar mais de 7 processos.
