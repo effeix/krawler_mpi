@@ -150,6 +150,8 @@ Caso o usuário possua a biblioteca de python `matplotlib`, 5 gráficos serão g
 ## Resultados
 Para demonstrar o programa foram gerados alguns testes utilizando a URL https://www.magazineluiza.com.br/artesanato/armarinhos/s/am/arsa/, categoria que não possui quantidade exagerada de produtos mas é grande o suficiente para o teste. Os testes foram realizados em um cluster AWS com instância rodando sistema Ubuntu 18.04.1, utilizando de 1 até 7 processos e de 1 até 4 máquinas, com máximo de 2 processos por máquina. Cada execução com um determinado número de processos foi realizada com 5 iterações, resultando em 42 iterações no total.
 
+O programa apresentará erros se a quantidade de páginas a serem buscadas for menor do que a quantidade de processos passados.
+
 Os gŕaficos gerados estão abaixo:
 
 IMAGENS
