@@ -1,3 +1,6 @@
 build/
 html/
+test/charts/
+test/files/
+test/hosts
 .vscode
