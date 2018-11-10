@@ -120,7 +120,7 @@ Após selecionada a URL, o programa deve ser compilado da seguinte maneira:
 
 ```sh
 $ cd src/build/
-$ cmake
+$ /usr/bin/cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -G 'Unix Makefiles' </caminho/até/krawler_mpi/src>
 $ make
 ```
 
@@ -129,7 +129,9 @@ Um programa em python foi criado para executar o programa (localizado em `test/`
 $ python run.py <max_procs> <iter> <url>
 ```
 
-em que `<max_procs>` é o número máximo de processos a serem utilizados - sero feitos testes utilizando de 1 até `<max_procs>` processos - `<iter>` é o número de ietraçes com a mesma quantidade de processos, afim de obter medidas mais precisas e `<url>` é a URL da categoria, como explicado acima.
+em que `<max_procs>` é o número máximo de processos a serem utilizados - serão feitos testes utilizando de 1 até `<max_procs>` processos - `<iter>` é o número de iterações com a mesma quantidade de processos, afim de obter medidas mais precisas e `<url>` é a URL da categoria, como explicado acima.
+
+Este programa está preparado para rodar num cluster especifico criado para este projeto. Caso deseje rodar num cluster próprio, edite as lista `HOSTNAMES` e `HOSTDESCS` no arquivo `run.py` e coloque os hostnames (ou IPs) correspondentes às máquinas de seu cluster.
 
 #### Arquivos de teste
 
@@ -137,10 +139,15 @@ As métricas estarão na pasta `test/files/`, com cada arquivo estando no format
 
 > O arquivo `iters_m2_p4_i0` mostra os resultados da primeira iteração de uma execução que utilizou 2 máquinas e 4 processos. O arquivo `iters_m2_p4_i1` mostra os resultados da segunda iteração da mesma execução.
 
-Cada máquina suporta um máximo de dois processos, sendo esta uma escolha do desenvolvedor. O arquivo `hosts`, presente na pasta `build/`, mostra os *hosts* (máquinas) utilizados pela última execução e a quantidade de processos disponíveis em cada uma (*slots*). Por algum motivo ainda não descoberto, a execução com mais de 7 processos não é possvel, gerando um erro do tipo *Segmentation Fault*.
+Cada máquina suporta um máximo de dois processos, sendo esta uma escolha do desenvolvedor. O arquivo `hosts`, presente na pasta `test/`, mostra os *hosts* (máquinas) utilizados pela última execução e a quantidade de processos (*slots*) disponíveis em cada um. Por algum motivo ainda não descoberto, a execução com mais de 7 processos não é possvel, gerando um erro do tipo *Segmentation Fault*.
 
 #### Gráficos
 
-Caso o usuário possua a biblioteca de python `matplotlib`, gráficos sero gerados com algumas visualizações de tempo e colocados na pasta `test/charts/`.
+Caso o usuário possua a biblioteca de python `matplotlib`, 5 gráficos serão gerados mostrando a evolução das métricas acima. É esperado que a métrcia TOTAL_PROD_COUNT se mantenha constante independentemente do número de processos, indicando que a mesma quantidade de produtos foi recuperada em todos os testes.
 
 ## Resultados
+Para demonstrar o programa foram gerados alguns testes utilizando a URL https://www.magazineluiza.com.br/artesanato/armarinhos/s/am/arsa/, categoria que não possui quantidade exagerada de produtos mas é grande o suficiente para o teste.
+
+Os gŕaficos gerados estão abaixo:
+
+IMAGENS
