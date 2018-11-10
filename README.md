@@ -131,7 +131,7 @@ $ python run.py <max_procs> <iter> <url>
 
 em que `<max_procs>` é o número máximo de processos a serem utilizados - serão feitos testes utilizando de 1 até `<max_procs>` processos - `<iter>` é o número de iterações com a mesma quantidade de processos, afim de obter medidas mais precisas e `<url>` é a URL da categoria, como explicado acima.
 
-Este programa está preparado para rodar num cluster especifico criado para este projeto. Caso deseje rodar num cluster próprio, edite as lista `HOSTNAMES` e `HOSTDESCS` no arquivo `run.py` e coloque os hostnames (ou IPs) correspondentes às máquinas de seu cluster.
+Este programa está preparado para rodar num cluster especifico criado para este projeto. Caso deseje rodar num cluster próprio, edite as lista `HOSTNAMES` e `HOSTDESCS` no arquivo `run.py` e coloque os dados correspondentes às máquinas de seu cluster.
 
 #### Arquivos de teste
 
@@ -145,8 +145,10 @@ Cada máquina suporta um máximo de dois processos, sendo esta uma escolha do de
 
 Caso o usuário possua a biblioteca de python `matplotlib`, 5 gráficos serão gerados mostrando a evolução das métricas acima. É esperado que a métrcia TOTAL_PROD_COUNT se mantenha constante independentemente do número de processos, indicando que a mesma quantidade de produtos foi recuperada em todos os testes.
 
+#### ATENÇÃO: os gráficos serão gerados para a quantidade de processos estipulada no momento da execução do comando. Exemplo: se no argumento `<max_iter>` for passado "1", os gráficos só terão um ponto de dado. Um dos objetivos é criar um arquivo separado para a geraço dos gráficos.
+
 ## Resultados
-Para demonstrar o programa foram gerados alguns testes utilizando a URL https://www.magazineluiza.com.br/artesanato/armarinhos/s/am/arsa/, categoria que não possui quantidade exagerada de produtos mas é grande o suficiente para o teste.
+Para demonstrar o programa foram gerados alguns testes utilizando a URL https://www.magazineluiza.com.br/artesanato/armarinhos/s/am/arsa/, categoria que não possui quantidade exagerada de produtos mas é grande o suficiente para o teste. Os testes foram realizados em um cluster AWS com instância rodando sistema Ubuntu 18.04.1, utilizando de 1 até 7 processos e de 1 até 4 máquinas, com máximo de 2 processos por máquina. Cada execução com um determinado número de processos foi realizada com 5 iterações, resultando em 42 iterações no total.
 
 Os gŕaficos gerados estão abaixo:
 
