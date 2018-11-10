@@ -10,8 +10,6 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/optional/optional.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/regex.hpp>
 
 using namespace std::chrono;
@@ -66,35 +64,48 @@ std::string KrawlerS::product_category(std::string product_url) {
     return strs[3];
 }
 
-Product KrawlerS::new_product(
-    std::string& link,
-    double& download_time) {
+std::vector<std::string> KrawlerS::get_pages(std::string url) {
+    std::string first_page = http_get(url);
+    std::string n_pages = search(first_page, re_last_page);
+    std::string pagination = "?page=";
 
-    duration<double> elapsed;
+    std::vector<std::string> pages;
 
-    Time::time_point product_analysis_start = Time::now();
+    for(int i = 1; i <= std::stoi(n_pages); i++) {
+        pages.push_back(
+            url + pagination + std::to_string(i)
+        );
+    }
 
-    Time::time_point product_download_start = Time::now();
-    std::string product_page = http_get(link);
-    Time::time_point product_download_end = Time::now();
+    return pages;
+}
 
-    std::string name = search(product_page, re_product_name);
-    std::string description = search(product_page, re_product_description);
-    std::string pic_url = search(product_page, re_product_img_url);
-    std::string price = search(product_page, re_product_price);
-    std::string installment_qty = search(product_page,
-        re_product_installment_qty);
-    std::string price_in_installment = search(product_page,
-        re_product_price_in_installment);
+Product KrawlerS::new_product(std::string& link, double& download_time) {
+
+    Time::time_point t0, t1, t2, t3;
+    double elapsed_analysis;
+
+    t0 = Time::now();
+
+        t1 = Time::now();
+            std::string product_page = http_get(link);
+        t2 = Time::now();
+
+        std::string name = search(product_page, re_product_name);
+        std::string description = search(product_page, re_product_description);
+        std::string pic_url = search(product_page, re_product_img_url);
+        std::string price = search(product_page, re_product_price);
+        std::string installment_qty = search(product_page,
+            re_product_installment_qty);
+        std::string price_in_installment = search(product_page,
+            re_product_price_in_installment);
     
-    Time::time_point product_analysis_end = Time::now();
+    t3 = Time::now();
 
-    elapsed = duration_cast<duration<double>>(product_download_end - product_download_start);
-    download_time = elapsed.count();
+    download_time = duration_cast<duration<double>>(t2 - t1).count();
 
-    elapsed = duration_cast<duration<double>>(product_analysis_end - product_analysis_start);
-
-    std::cerr << "PROD_TIME: " << elapsed.count() << std::endl;
+    elapsed_analysis = duration_cast<duration<double>>(t3 - t0).count();
+    std::cerr << elapsed_analysis << std::endl;
 
     return Product(
         name,
@@ -109,21 +120,21 @@ Product KrawlerS::new_product(
 }
 
 std::vector<std::string> KrawlerS::crawl(
-    std::vector<std::string> urls, double& process_idle_time) {
+    std::vector<std::string> urls,
+    double& process_idle_time) {
 
     std::vector<std::string> all_products;
 
     std::string category = product_category(urls[0]);
 
+    Time::time_point t0, t1;
     double download_time;
-    duration<double> elapsed;
 
     for(unsigned int i = 0; i < urls.size(); i++) {
-        Time::time_point download_time_start = Time::now();
-        std::string products_page = http_get(urls[i]);
-        Time::time_point download_time_end = Time::now();
-        elapsed = duration_cast<duration<double>>(download_time_end - download_time_start);
-        process_idle_time += elapsed.count();
+        t0 = Time::now();
+            std::string products_page = http_get(urls[i]);
+        t1 = Time::now();
+        process_idle_time += duration_cast<duration<double>>(t1 - t0).count();
 
         std::vector<std::string> product_links = search_many(
             products_page,
@@ -139,27 +150,5 @@ std::vector<std::string> KrawlerS::crawl(
         }
     }
 
-    // std::ostringstream oss;
-    // for(std::string& p: all_products)
-    //     oss << p << std::endl;
-
-    // std::cout << oss.str();
-
     return all_products;
-}
-
-std::vector<std::string> KrawlerS::get_pages(std::string url) {
-    std::string first_page = http_get(url);
-    std::string n_pages = search(first_page, re_last_page);
-    std::string pagination = "?page=";
-
-    std::vector<std::string> pages;
-
-    for(int i = 1; i <= std::stoi(n_pages); i++) {
-        pages.push_back(
-            url + pagination + std::to_string(i)
-        );
-    }
-
-    return pages;
 }
