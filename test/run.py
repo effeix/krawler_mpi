@@ -58,7 +58,7 @@ if __name__ == "__main__":
         n_proc = MAX_PROC
         print(f"Max numbers of processes allowed: {MAX_PROC}. Launching {n_proc}")
 
-    proc_list = [3, 4]#list(range(1, n_proc + 1))
+    proc_list = list(range(1, n_proc + 1))
 
     if not path.exists(TEST_DIR):
         makedirs(TEST_DIR)
@@ -126,9 +126,10 @@ if __name__ == "__main__":
 
         for k in plot_data:
             if k != "PROCESSES":
+                fig = plt.figure()
                 plt.title(k)
                 plt.xticks(plot_data["PROCESSES"])
-                plt.plot(plot_data["PROCESSES"], plot_data[k])
-                plt.show()
+                plt.plot(plot_data["PROCESSES"], plot_data[k], "o-")
                 plt.savefig(path.join(CHARTS_DIR, k)+".png")
+                plt.close(fig)
             
