@@ -76,7 +76,7 @@ Afim de explorar a performance deste programa, algumas métricas de tempo são c
 
 - Tempo ocioso (TOTAL_IDLE_TIME): tempo de espera pelo download de páginas
 - Tempo médio ocioso (AVG_IDLE_TIME): tempo médio de espera pelo download de páginas
-- Tempo por produto (PROD_TIME): tempo gasto para baixar uma página específica de um produto e criar sua visualização em JSON. Cada produto baixado possui um PROD_TIME.
+- Tempo por produto (PROD_TIME): tempo gasto para baixar uma página específica de um produto e criar sua visualização em JSON. Cada produto baixado possui uma linha com o tempo gasto.
 - Tempo médio por produto (AVG_TIME_PER_PRODUCT): tempo total de execução dividido pelo número de produtos coletados.
 
 Outras métricas coletadas:
@@ -88,9 +88,9 @@ Outras métricas coletadas:
 Todas as métricas são enviadas para a saída de erro padrão do sistema, que pode ser redirecionada para um arquivo de texto a gosto do usuário, como no exemplo a seguir (todos os valores estçao em segundos, com exceção de TOTAL_PROD_COUNT que é uma contagem):
 
 ```
-PROD_TIME: 1.2
-PROD_TIME: 0.85
-PROD_TIME: 0.50
+1.2
+0.85
+0.50
 ...
 TOTAL_PROD_COUNT: 200
 AVG_IDLE_TIME: 15
