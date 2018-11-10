@@ -66,7 +66,9 @@ Cada processo utilizará seu conjunto de URLs para coletar os produtos, podendo 
 }
 ```
 
-As informações são obtidas por meio do uso de expressões regulares que as detectam em meio ao conteúdo HTML de cada página. Após a finalização de todas as URLs de todos os processos, a função `boost::mpi::gather()` é utilizada para agrupar novamente os produtos gerados, em um processo escolhido pelo usuário (novamente, normalmente o 0 (zero)). Após agrupados, os produtos serão mostrados ao usuário via saída padrão (terminal). No final do relatório existe um diagrama detalhando a troca de mensagens entre os processos.
+As informações são obtidas por meio do uso de expressões regulares que as detectam em meio ao conteúdo HTML de cada página. Após a finalização de todas as URLs de todos os processos, a função `boost::mpi::gather()` é utilizada para agrupar novamente os produtos gerados, em um processo escolhido pelo usuário (novamente, normalmente o 0 (zero)). Após agrupados, os produtos serão mostrados ao usuário via saída padrão (terminal). Abaixo est um esquema da troca de mensagens entre processos:
+
+![MPI Schema](https://i.imgur.com/mXTfavv.png)
 
 ## Métricas
 
