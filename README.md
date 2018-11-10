@@ -157,7 +157,7 @@ Para demonstrar o programa foram gerados alguns testes utilizando a URL https://
 
 O programa apresentará erros se a quantidade de páginas a serem buscadas for menor do que a quantidade de processos passados.
 
-Os gŕaficos gerados estão abaixo, sendo que o eixo horizontal representa número de processos e o eixo vertical representa tempo em segundos:
+Os gŕaficos gerados estão abaixo, sendo que o eixo horizontal representa número de processos e o eixo vertical representa tempo em segundos, exceto no gráfico TOTAL_PROD_COUNT, em que o eixo vertical representa quantidade:
 
 ![TOTAL_PROD_COUNT](https://i.imgur.com/Pg3t1rj.png)
 
