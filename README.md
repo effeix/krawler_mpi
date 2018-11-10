@@ -145,6 +145,11 @@ Cada máquina suporta um máximo de dois processos, sendo esta uma escolha do de
 
 Caso o usuário possua a biblioteca de python `matplotlib`, 5 gráficos podem ser gerados com o programa `make_charts.py`, passando a quantidade de processos máximos a serem analisado (e.g. se o usuário passar 6, haverá 6 pontos de dado em cada gráfico). É esperado que a métrica TOTAL_PROD_COUNT se mantenha constante independentemente do número de processos, indicando que a mesma quantidade de produtos foi recuperada em todos os testes.
 
+Utilização:
+```sh
+$ python make_charts.py <max_proc>
+```
+
 ## Resultados
 Para demonstrar o programa foram gerados alguns testes utilizando a URL https://www.magazineluiza.com.br/artesanato/armarinhos/s/am/arsa/, categoria que não possui quantidade exagerada de produtos mas é grande o suficiente para o teste. Os testes foram realizados em um cluster AWS com instância rodando sistema Ubuntu 18.04.1, utilizando de 1 até 7 processos e de 1 até 4 máquinas, com máximo de 2 processos por máquina. Cada execução com um determinado número de processos foi realizada com 5 iterações, resultando em 42 iterações no total.
 
